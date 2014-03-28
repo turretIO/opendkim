@@ -168,9 +168,9 @@ func (lib *Lib) Close() {
 
 // Dkim handle
 type Dkim struct {
-	dkim *C.DKIM
-	mtx  sync.Mutex
-    ignoreHeaderFields map[string]bool
+	dkim               *C.DKIM
+	mtx                sync.Mutex
+	ignoreHeaderFields map[string]bool
 }
 
 // NewSigner creates a new DKIM handle for message signing.
@@ -193,7 +193,7 @@ func (lib *Lib) NewSigner(secret, selector, domain string, hdrCanon, bodyCanon C
 		&stat,
 	)
 
-    signer.ignoreHeaderFields = ignoreHeaderFields
+	signer.ignoreHeaderFields = ignoreHeaderFields
 
 	s := Status(stat)
 	if s != StatusOK {
@@ -257,9 +257,15 @@ func (d *Dkim) process(r io.Reader) (hdr, body *bytes.Buffer, stat Status) {
 	}
 	hdr = bytes.NewBuffer(nil)
 	for k, vv := range msg.Header {
-        if d.ignoreHeaderFields[k] {
-            continue        
-        } 
+		if d.ignoreHeaderFields[k] {
+			// Just write out ignored fields and don't include
+			// them in the signature
+			for _, v := range vv {
+				h := k + `: ` + v
+				hdr.WriteString(h + "\r\n")
+			}
+			continue
+		}
 		for _, v := range vv {
 			h := k + `: ` + v
 			stat = d.Header(h)
