@@ -130,7 +130,7 @@ const (
 
 // Lib is a dkim library handle
 type Lib struct {
-	lib *C.struct_DKIM_LIB
+	lib *C.struct_dkim_lib
 	mtx sync.Mutex
 }
 
